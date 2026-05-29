@@ -14,8 +14,8 @@
 
 ## How to run
 1. On terminal install the lib: go mod tidy
-2. Modify the InputFile (excel) in main.go as a input data
-3. Make sure the template is in same folder of project
+2. Modify the InputFile (excel) in main.go as an input data
+3. Make sure the template is in the same folder on project folder
 4. Run the code from terminal: go run main.go
 5. Or to compile it from terminal use: go build main.go
 
