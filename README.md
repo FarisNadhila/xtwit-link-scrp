@@ -1,4 +1,4 @@
-# Digivla X/Twitter link scraper
+# X/Twt link scraper
 
 ## Made with
 - Golang 1.26.3
