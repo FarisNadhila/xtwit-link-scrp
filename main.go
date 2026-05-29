@@ -3,17 +3,17 @@ package main
 import (
 	"fmt"
 	"log"
-	"scrape-neticle-go/excel"
-	"scrape-neticle-go/models"
-	"scrape-neticle-go/scraper"
 	"sync"
+	"xtwit-link-scrp/excel"
+	"xtwit-link-scrp/models"
+	"xtwit-link-scrp/scraper"
 
 	"github.com/schollz/progressbar/v3"
 )
 
 const (
-	InputFile    = "../Data loss Twitter.xlsx"
-	TemplateFile = "../neticle_mention_excel_upload_template (17).xlsx"
+	InputFile    = "./Data loss Twitter.xlsx"
+	TemplateFile = "./neticle_mention_excel_upload_template (17).xlsx"
 	OutputFile   = "scraped_results.xlsx"
 )
 

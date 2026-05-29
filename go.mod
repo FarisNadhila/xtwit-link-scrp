@@ -1,4 +1,4 @@
-module scrape-neticle-go
+module xtwit-link-scrp
 
 go 1.26.3
 

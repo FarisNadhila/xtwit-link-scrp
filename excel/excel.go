@@ -2,7 +2,7 @@ package excel
 
 import (
 	"fmt"
-	"scrape-neticle-go/models"
+	"xtwit-link-scrp/models"
 
 	"github.com/xuri/excelize/v2"
 )

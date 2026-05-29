@@ -6,9 +6,9 @@ import (
 	"io"
 	"net/http"
 	"regexp"
-	"scrape-neticle-go/models"
 	"strings"
 	"time"
+	"xtwit-link-scrp/models"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -94,7 +94,7 @@ func ScrapeTwitter(link string) (*models.TweetData, error) {
 
 	tweetEntities := data.Entities.Tweets.Entities
 	var tweetData map[string]interface{}
-	
+
 	if val, ok := tweetEntities[tweetID]; ok {
 		tweetData = val.(map[string]interface{})
 	} else {
@@ -118,7 +118,7 @@ func ScrapeTwitter(link string) (*models.TweetData, error) {
 	if text == "" {
 		text, _ = tweetData["text"].(string)
 	}
-	
+
 	username, _ := userData["screen_name"].(string)
 	accountName, _ := userData["name"].(string)
 	createdAt, _ := tweetData["created_at"].(string)
