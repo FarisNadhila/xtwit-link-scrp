@@ -2,6 +2,7 @@ package excel
 
 import (
 	"fmt"
+	"strings"
 	"xtwit-link-scrp/models"
 
 	"github.com/xuri/excelize/v2"
@@ -23,7 +24,7 @@ func ReadLinks(filename string) ([]string, error) {
 	linkCol := -1
 	if len(rows) > 0 {
 		for i, cell := range rows[0] {
-			if cell == "Links" {
+			if strings.EqualFold(cell, "Links") {
 				linkCol = i
 				break
 			}
@@ -64,7 +65,7 @@ func WriteResults(templateFile, outputFile string, results []models.TweetData) e
 	headers := rows[headerRowIndex]
 	colMap := make(map[string]int)
 
-	fields := []string{"Year", "Month", "Day", "Text", "Hour", "Minute", "Title", "URL", "Author", "Views", "Likes"}
+	fields := []string{"Year", "Month", "Day", "Text", "Hour", "Minute", "Title", "URL", "Author", "Views", "Likes", "Comments"}
 	for _, field := range fields {
 		for i, h := range headers {
 			if h == field {
@@ -124,6 +125,9 @@ func writeData(f *excelize.File, sheet string, row int, colMap map[string]int, d
 	}
 	if c, ok := colMap["Likes"]; ok {
 		f.SetCellValue(sheet, cellName(c, row), data.Likes)
+	}
+	if c, ok := colMap["Comments"]; ok {
+		f.SetCellValue(sheet, cellName(c, row), data.Comments)
 	}
 }
 
