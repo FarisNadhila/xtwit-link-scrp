@@ -62,7 +62,7 @@ func main() {
 	doc.Find("time").Each(func(i int, s *goquery.Selection) {
 		dt, exists := s.Attr("datetime")
 		if exists && dt != "" {
-			fmt.Println("✅ <time datetime> found:", dt)
+			fmt.Println("<time datetime>:", dt)
 			if t, err := time.Parse(time.RFC3339, dt); err == nil {
 				fmt.Println("   Parsed:", t.UTC())
 			}
@@ -71,7 +71,7 @@ func main() {
 	})
 
 	if !found {
-		fmt.Println("❌ No <time datetime> found — likely bot-detected or login wall")
-		fmt.Println("   Response body snippet:", body[:500])
+		fmt.Println("No <time datetime> found")
+		fmt.Println("Resp snippet:", body[:500])
 	}
 }
