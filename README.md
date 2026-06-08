@@ -13,10 +13,21 @@
 - Output to excel via excelize
 
 ## How to run
-1. On terminal install the lib: go mod tidy
-2. Modify the InputFile (excel) in main.go as an input data
-3. Make sure the template is in the same folder on project folder
-4. Run the code from terminal: go run main.go
-5. Or to compile it from terminal use: go build main.go
+1. On terminal install the lib: `go mod tidy`
+2. Prepare your input Excel file (default is `input.xlsx`)
+3. Make sure the template (`template.xlsx`) is in the same folder as the project folder
+4. Run the code from terminal: `go run main.go`
+   - Or specify a custom input file: `go run main.go -input input.xlsx`
+5. Or to compile it to an executable:
+   - For Linux: `go build -o xtwit-link-scrp .`
+   - For Windows: `GOOS=windows GOARCH=amd64 go build -o xtwit-link-scrp.exe .`
+   - Run the executable: `./xtwit-link-scrp -input my_links.xlsx`
+
+## ADD-ON (for threads & tiktok)
+Tiktok and Threads using advance anti-bot system to prevent data scraping.
+It need some workaround to bypass the rate-limiting/anti-bot.
+To make the scraping process works makes sure to install:
+- chromedp lib: on terminal -> GOPROXY=direct GONOSUMDB=* go get github.com/chromedp/chromedp
+- Chrome/Chromium browser. Chrome canary recommended.
 
 

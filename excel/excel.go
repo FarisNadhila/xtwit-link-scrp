@@ -44,7 +44,7 @@ func ReadLinks(filename string) ([]string, error) {
 	return links, nil
 }
 
-func WriteResults(templateFile, outputFile string, results []models.TweetData) error {
+func WriteResults(templateFile, outputFile string, results []models.SocialData) error {
 	f, err := excelize.OpenFile(templateFile)
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func WriteResults(templateFile, outputFile string, results []models.TweetData) e
 	return f.SaveAs(outputFile)
 }
 
-func writeData(f *excelize.File, sheet string, row int, colMap map[string]int, data models.TweetData) {
+func writeData(f *excelize.File, sheet string, row int, colMap map[string]int, data models.SocialData) {
 	if c, ok := colMap["Year"]; ok {
 		f.SetCellValue(sheet, cellName(c, row), data.Year)
 	}
