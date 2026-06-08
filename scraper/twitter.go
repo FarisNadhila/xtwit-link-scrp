@@ -3,11 +3,10 @@ package scraper
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"regexp"
 	"strings"
 	"time"
+	"xtwit-link-scrp/config"
 	"xtwit-link-scrp/models"
 
 	"github.com/PuerkitoBio/goquery"
@@ -28,38 +27,25 @@ type TwitterInitialState struct {
 	} `json:"entities"`
 }
 
-func ScrapeTwitter(link string) (*models.TweetData, error) {
-	client := &http.Client{
-		Timeout: 20 * time.Second,
+func ScrapeTwitter(link string) (*models.SocialData, error) {
+	doc, err := config.RequestStatic(link)
+
+	hasData := func(d *goquery.Document) bool {
+		found := false
+		d.Find("script").Each(func(i int, s *goquery.Selection) {
+			if strings.Contains(s.Text(), "window.__INITIAL_STATE__") {
+				found = true
+			}
+		})
+		return found
 	}
 
-	req, err := http.NewRequest("GET", link, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-
-	time.Sleep(1 * time.Second)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status code error: %d %s", resp.StatusCode, resp.Status)
-	}
-
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(bodyBytes)))
-	if err != nil {
-		return nil, err
+	if err != nil || !hasData(doc) {
+		fmt.Printf("method1 fail %s, trying method2\n", link)
+		doc, err = config.RequestHeadless(link)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var jsonStr string
@@ -72,13 +58,6 @@ func ScrapeTwitter(link string) (*models.TweetData, error) {
 			}
 		}
 	})
-
-	if jsonStr == "" {
-		match := initialStateRegex.FindStringSubmatch(string(bodyBytes))
-		if len(match) > 1 {
-			jsonStr = match[1]
-		}
-	}
 
 	if jsonStr == "" {
 		return nil, fmt.Errorf("could not find INITIAL_STATE")
@@ -129,18 +108,20 @@ func ScrapeTwitter(link string) (*models.TweetData, error) {
 		dt = time.Now()
 	}
 
-	return &models.TweetData{
-		Year:    dt.Year(),
-		Month:   int(dt.Month()),
-		Day:     dt.Day(),
+	dataTwit := &models.SocialData{
+		Year:    uint16(dt.Year()),
+		Month:   uint8(dt.Month()),
+		Day:     uint8(dt.Day()),
 		Text:    text,
-		Hour:    dt.Hour(),
-		Minute:  dt.Minute(),
+		Hour:    uint8(dt.Hour()),
+		Minute:  uint8(dt.Minute()),
 		Title:   accountName,
 		URL:     link,
 		Author:  username,
 		Views:   0,
-		Likes:   int(likes),
+		Likes:   uint32(likes),
 		Created: dt,
-	}, nil
+	}
+
+	return dataTwit, nil
 }

@@ -2,34 +2,24 @@ package models
 
 import "time"
 
-type TweetData struct {
-	Year     int
-	Month    int
-	Day      int
-	Text     string
-	Hour     int
-	Minute   int
-	Title    string
-	URL      string
-	Author   string
-	Views    int
-	Likes    int
-	Comments int
-	Created  time.Time
-}
-
-type InstagramData struct {
-	Year      int
-	Month     int
-	Day       int
+type SocialData struct {
+	Year      uint16
+	Month     uint8
+	Day       uint8
 	Text      string
-	Hour      int
-	Minute    int
-	AccountID string
+	Hour      uint8
+	Minute    uint8
 	Title     string
 	URL       string
 	Author    string
-	Likes     int
-	Comments  int
+	Views     uint64
+	Likes     uint32
+	Comments  uint32
+	Repost    uint32
+	Quotes    uint32
+	SumRepost uint32
+	Share     uint32
+	Following uint16
+	Followers uint32
 	Created   time.Time
 }

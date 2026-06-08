@@ -70,6 +70,7 @@ $RECYCLE.BIN/
 *.xlsx
 *.docx
 *.html
+*.log
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,windows,go
 
