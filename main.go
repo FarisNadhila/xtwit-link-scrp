@@ -77,9 +77,14 @@ var platforms = []platform{
 	},
 }
 
+type ScrapeTask struct {
+	Index int
+	URL   string
+}
+
 type bucket struct {
 	platform platform
-	links    []string
+	tasks    []ScrapeTask
 }
 
 type ScraperManager struct {
@@ -91,14 +96,16 @@ func main() {
 	inputFile := flag.String("input", "input.xlsx", "Path to the input Excel file")
 	flag.Parse()
 
-	buckets := analyzeInput(*inputFile)
-	manager := &ScraperManager{}
+	buckets, total := analyzeInput(*inputFile)
+	manager := &ScraperManager{
+		results: make([]models.SocialData, total),
+	}
 	manager.runParallelScrape(buckets)
 	manager.exportToExcel()
 }
 
 // analyze
-func analyzeInput(filename string) []bucket {
+func analyzeInput(filename string) ([]bucket, int) {
 	links, err := excel.ReadLinks(filename)
 	if err != nil {
 		log.Fatalf("Error reading links from %s: %v", filename, err)
@@ -109,12 +116,12 @@ func analyzeInput(filename string) []bucket {
 		buckets[i] = bucket{platform: p}
 	}
 
-	for _, link := range links {
+	for idx, link := range links {
 		lower := strings.ToLower(link)
 		matched := false
 		for i, p := range platforms {
 			if p.Matches(lower) {
-				buckets[i].links = append(buckets[i].links, link)
+				buckets[i].tasks = append(buckets[i].tasks, ScrapeTask{Index: idx, URL: link})
 				matched = true
 				break
 			}
@@ -125,36 +132,36 @@ func analyzeInput(filename string) []bucket {
 	}
 
 	for _, b := range buckets {
-		fmt.Printf("%s(%d) ", b.platform.Label, len(b.links))
+		fmt.Printf("%s(%d) ", b.platform.Label, len(b.tasks))
 	}
 	fmt.Print("\n\n")
 
-	return buckets
+	return buckets, len(links)
 }
 
 // scrpMgmt
 func (m *ScraperManager) runParallelScrape(buckets []bucket) {
 	var wg sync.WaitGroup
 	for _, b := range buckets {
-		if len(b.links) == 0 {
+		if len(b.tasks) == 0 {
 			continue
 		}
 		wg.Add(1)
 		go func(b bucket) {
 			defer wg.Done()
-			bar := progressbar.Default(int64(len(b.links)), b.platform.Label)
-			m.workerPool(b.links, bar, b.platform.Scrape)
+			bar := progressbar.Default(int64(len(b.tasks)), b.platform.Label)
+			m.workerPool(b.tasks, bar, b.platform.Scrape)
 		}(b)
 	}
 	wg.Wait()
 }
 
-func (m *ScraperManager) workerPool(links []string, bar *progressbar.ProgressBar, scrapeFn func(string) (models.SocialData, error)) {
-	linkChan := make(chan string, WorkerCount)
+func (m *ScraperManager) workerPool(tasks []ScrapeTask, bar *progressbar.ProgressBar, scrapeFn func(string) (models.SocialData, error)) {
+	taskChan := make(chan ScrapeTask, WorkerCount)
 
 	numWorkers := WorkerCount
-	if len(links) < numWorkers {
-		numWorkers = len(links)
+	if len(tasks) < numWorkers {
+		numWorkers = len(tasks)
 	}
 
 	var wg sync.WaitGroup
@@ -162,20 +169,20 @@ func (m *ScraperManager) workerPool(links []string, bar *progressbar.ProgressBar
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for link := range linkChan {
-				data := scrapeWithRetry(link, scrapeFn)
+			for task := range taskChan {
+				data := scrapeWithRetry(task.URL, scrapeFn)
 				m.mu.Lock()
-				m.results = append(m.results, data)
+				m.results[task.Index] = data
 				m.mu.Unlock()
 				bar.Add(1)
 			}
 		}()
 	}
 
-	for _, link := range links {
-		linkChan <- link
+	for _, task := range tasks {
+		taskChan <- task
 	}
-	close(linkChan)
+	close(taskChan)
 	wg.Wait()
 }
 
@@ -204,12 +211,19 @@ func scrapeWithRetry(link string, scrapeFn func(string) (models.SocialData, erro
 
 // excel
 func (m *ScraperManager) exportToExcel() {
-	if len(m.results) == 0 {
+	var finalResults []models.SocialData
+	for _, res := range m.results {
+		if res.URL != "" {
+			finalResults = append(finalResults, res)
+		}
+	}
+
+	if len(finalResults) == 0 {
 		fmt.Println("No results to export.")
 		return
 	}
-	fmt.Printf("%d results -> %s...\n", len(m.results), OutputFile)
-	if err := excel.WriteResults(TemplateFile, OutputFile, m.results); err != nil {
+	fmt.Printf("%d results -> %s...\n", len(finalResults), OutputFile)
+	if err := excel.WriteResults(TemplateFile, OutputFile, finalResults); err != nil {
 		log.Fatalf("Error writing results to excel: %v", err)
 	}
 }
