@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	var link string = "https://x.com/libranazero/status/2059239292501700724"
+	var link string = "https://x.com/liyilyliy/status/1617182439289556993"
 
 	client := &http.Client{
 		Timeout: 20 * time.Second,

@@ -13,18 +13,26 @@ import (
 )
 
 var (
-	initialStateRegex = regexp.MustCompile(`window\.__INITIAL_STATE__\s*=\s*({.*?});`)
+	replyCountRegex    = regexp.MustCompile(`reply_count:(\d+)`)
+	favoriteCountRegex = regexp.MustCompile(`favorite_count:(\d+)`)
+	retweetCountRegex  = regexp.MustCompile(`retweet_count:(\d+)`)
+	bookmarkCountRegex = regexp.MustCompile(`bookmark_count:(\d+)`)
+	quoteCountRegex    = regexp.MustCompile(`quote_count:(\d+)`)
+	viewCountRegex     = regexp.MustCompile(`count:"(\d+)"`)
 )
 
-type TwitterInitialState struct {
-	Entities struct {
-		Tweets struct {
-			Entities map[string]interface{} `json:"entities"`
-		} `json:"tweets"`
-		Users struct {
-			Entities map[string]interface{} `json:"entities"`
-		} `json:"users"`
-	} `json:"entities"`
+type TwitterLDJSON struct {
+	ArticleBody string `json:"articleBody"`
+	Author      struct {
+		Name          string `json:"name"`
+		AlternateName string `json:"alternateName"`
+		URL           string `json:"url"`
+	} `json:"author"`
+	DatePublished string `json:"datePublished"`
+	Headline      string `json:"headline"`
+	Identifier    string `json:"identifier"`
+	Image         string `json:"image"`
+	URL           string `json:"url"`
 }
 
 func ScrapeTwitter(link string) (*models.SocialData, error) {
@@ -32,8 +40,8 @@ func ScrapeTwitter(link string) (*models.SocialData, error) {
 
 	hasData := func(d *goquery.Document) bool {
 		found := false
-		d.Find("script").Each(func(i int, s *goquery.Selection) {
-			if strings.Contains(s.Text(), "window.__INITIAL_STATE__") {
+		d.Find("script[type='application/ld+json']").Each(func(i int, s *goquery.Selection) {
+			if strings.Contains(s.Text(), "SocialMediaPosting") {
 				found = true
 			}
 		})
@@ -48,79 +56,79 @@ func ScrapeTwitter(link string) (*models.SocialData, error) {
 		}
 	}
 
-	var jsonStr string
-	doc.Find("script").Each(func(i int, s *goquery.Selection) {
-		text := s.Text()
-		if strings.Contains(text, "window.__INITIAL_STATE__") {
-			match := initialStateRegex.FindStringSubmatch(text)
-			if len(match) > 1 {
-				jsonStr = match[1]
+	var ldData TwitterLDJSON
+	var jsonFound bool
+	doc.Find("script[type='application/ld+json']").Each(func(i int, s *goquery.Selection) {
+		var temp map[string]interface{}
+		if err := json.Unmarshal([]byte(s.Text()), &temp); err == nil {
+			if temp["@type"] == "SocialMediaPosting" {
+				if b, err := json.Marshal(temp); err == nil {
+					json.Unmarshal(b, &ldData)
+					jsonFound = true
+				}
 			}
 		}
 	})
 
-	if jsonStr == "" {
-		return nil, fmt.Errorf("could not find INITIAL_STATE")
+	if !jsonFound {
+		return nil, fmt.Errorf("could not find SocialMediaPosting JSON-LD")
 	}
 
-	var data TwitterInitialState
-	if err := json.Unmarshal([]byte(jsonStr), &data); err != nil {
-		return nil, err
-	}
+	htmlContent, _ := doc.Html()
 
-	parts := strings.Split(link, "/")
-	tweetID := strings.Split(parts[len(parts)-1], "?")[0]
-
-	tweetEntities := data.Entities.Tweets.Entities
-	var tweetData map[string]interface{}
-
-	if val, ok := tweetEntities[tweetID]; ok {
-		tweetData = val.(map[string]interface{})
-	} else {
-		for k, v := range tweetEntities {
-			if k == tweetID {
-				tweetData = v.(map[string]interface{})
-				break
-			}
+	extractCount := func(re *regexp.Regexp, content string) uint32 {
+		match := re.FindStringSubmatch(content)
+		if len(match) > 1 {
+			var count uint32
+			fmt.Sscanf(match[1], "%d", &count)
+			return count
 		}
+		return 0
 	}
 
-	if tweetData == nil {
-		return nil, fmt.Errorf("tweet data not found")
+	extractCount64 := func(re *regexp.Regexp, content string) uint64 {
+		match := re.FindStringSubmatch(content)
+		if len(match) > 1 {
+			var count uint64
+			fmt.Sscanf(match[1], "%d", &count)
+			return count
+		}
+		return 0
 	}
 
-	userID := fmt.Sprintf("%v", tweetData["user"])
-	userEntities := data.Entities.Users.Entities
-	userData, _ := userEntities[userID].(map[string]interface{})
+	replies := extractCount(replyCountRegex, htmlContent)
+	likes := extractCount(favoriteCountRegex, htmlContent)
+	retweets := extractCount(retweetCountRegex, htmlContent)
+	bookmarks := extractCount(bookmarkCountRegex, htmlContent)
+	quotes := extractCount(quoteCountRegex, htmlContent)
+	views := extractCount64(viewCountRegex, htmlContent)
 
-	text, _ := tweetData["full_text"].(string)
-	if text == "" {
-		text, _ = tweetData["text"].(string)
-	}
+	_ = bookmarks
 
-	username, _ := userData["screen_name"].(string)
-	accountName, _ := userData["name"].(string)
-	createdAt, _ := tweetData["created_at"].(string)
-	likes, _ := tweetData["favorite_count"].(float64)
-
-	dt, err := time.Parse("2006-01-02T15:04:05.000Z", createdAt)
+	dt, err := time.Parse(time.RFC3339, ldData.DatePublished)
 	if err != nil {
 		dt = time.Now()
 	}
 
+	username := strings.TrimPrefix(ldData.Author.AlternateName, "@")
+
 	dataTwit := &models.SocialData{
-		Year:    uint16(dt.Year()),
-		Month:   uint8(dt.Month()),
-		Day:     uint8(dt.Day()),
-		Text:    text,
-		Hour:    uint8(dt.Hour()),
-		Minute:  uint8(dt.Minute()),
-		Title:   accountName,
-		URL:     link,
-		Author:  username,
-		Views:   0,
-		Likes:   uint32(likes),
-		Created: dt,
+		Year:      uint16(dt.Year()),
+		Month:     uint8(dt.Month()),
+		Day:       uint8(dt.Day()),
+		Text:      ldData.ArticleBody,
+		Hour:      uint8(dt.Hour()),
+		Minute:    uint8(dt.Minute()),
+		Title:     ldData.Author.Name,
+		URL:       link,
+		Author:    username,
+		Views:     views,
+		Likes:     likes,
+		Comments:  replies,
+		Repost:    retweets,
+		Quotes:    quotes,
+		SumRepost: retweets + quotes,
+		Created:   dt,
 	}
 
 	return dataTwit, nil
