@@ -14,7 +14,7 @@ import (
 func ScrapeTiktok(link string) (*models.SocialData, error) {
 	doc, err := config.RequestStatic(link)
 	if err != nil || doc.Find(`script[type="application/json"]#api-data`).Length() == 0 {
-		fmt.Printf("method1 fail %s, trying method2\n", link)
+		fmt.Printf("\nmethod1 fail %s, trying method2\n", link)
 		doc, err = config.RequestHeadless(link)
 		if err != nil {
 			return nil, err

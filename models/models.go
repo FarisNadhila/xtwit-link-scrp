@@ -19,6 +19,7 @@ type SocialData struct {
 	Quotes    uint32
 	SumRepost uint32
 	Share     uint32
+	Bookmark  uint32
 	Following uint16
 	Followers uint32
 	Created   time.Time

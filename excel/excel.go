@@ -65,10 +65,10 @@ func WriteResults(templateFile, outputFile string, results []models.SocialData) 
 	headers := rows[headerRowIndex]
 	colMap := make(map[string]int)
 
-	fields := []string{"Year", "Month", "Day", "Text", "Hour", "Minute", "Title", "URL", "Author", "Views", "Likes", "Comments"}
+	fields := []string{"Year", "Month", "Day", "Text", "Hour", "Minute", "Title", "URL", "Author", "Views", "Likes", "Comments", "Reply", "Quote", "Retweet"}
 	for _, field := range fields {
 		for i, h := range headers {
-			if h == field {
+			if strings.EqualFold(h, field) {
 				colMap[field] = i + 1
 				break
 			}
@@ -128,6 +128,15 @@ func writeData(f *excelize.File, sheet string, row int, colMap map[string]int, d
 	}
 	if c, ok := colMap["Comments"]; ok {
 		f.SetCellValue(sheet, cellName(c, row), data.Comments)
+	}
+	if c, ok := colMap["Reply"]; ok {
+		f.SetCellValue(sheet, cellName(c, row), data.Comments)
+	}
+	if c, ok := colMap["Quote"]; ok {
+		f.SetCellValue(sheet, cellName(c, row), data.Quotes)
+	}
+	if c, ok := colMap["Retweet"]; ok {
+		f.SetCellValue(sheet, cellName(c, row), data.Repost)
 	}
 }
 

@@ -66,12 +66,12 @@ $RECYCLE.BIN/
 *.lnk
 
 # File
-*.xls
-*.xlsx
 *.docx
 *.html
 *.log
 *.json
+
+tmp/
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,windows,go
 

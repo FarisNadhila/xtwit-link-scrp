@@ -2,6 +2,7 @@ package scraper
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,7 +15,7 @@ import (
 func ScrapeInstagram(link string) (*models.SocialData, error) {
 	doc, err := config.RequestStatic(link)
 	if err != nil || doc.Find(`meta[name="description"]`).Length() == 0 {
-		fmt.Printf("method1 fail %s, trying method2\n", link)
+		log.Fatalf("\nmethod1 fail %s, trying method2\n", link)
 		doc, err = config.RequestHeadless(link)
 		if err != nil {
 			return nil, err
