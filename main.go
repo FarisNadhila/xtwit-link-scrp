@@ -198,9 +198,9 @@ func scrapeWithRetry(link string, scrapeFn func(string) (models.SocialData, erro
 		}
 
 		if attempt < MaxRetries-1 {
-			// Exponential backoff: 2s, 4s, 8s...
+			// exponential backoff: 2s, 4s, 8s, ...
 			backoff := time.Duration(1<<uint(attempt+1)) * time.Second
-			// Jitter: add random 0-1000ms
+			// jitter: rand 0-1000ms
 			jitter := time.Duration(rand.Intn(1000)) * time.Millisecond
 			time.Sleep(backoff + jitter)
 		}

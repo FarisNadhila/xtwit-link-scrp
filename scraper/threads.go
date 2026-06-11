@@ -66,7 +66,7 @@ func ScrapeThreads(link string) (*models.SocialData, error) {
 	}
 
 	if err != nil || !hasJSON(doc) {
-		fmt.Printf("method1 fail %s, trying method2\n", link)
+		fmt.Printf("\nmethod1 fail %s, trying method2\n", link)
 		doc, err = config.RequestHeadless(link)
 		if err != nil {
 			return nil, err
