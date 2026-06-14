@@ -2,7 +2,6 @@ package scraper
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -13,20 +12,23 @@ import (
 )
 
 func ScrapeInstagram(link string) (*models.SocialData, error) {
+	// req
 	doc, err := config.RequestStatic(link)
 	if err != nil || doc.Find(`meta[name="description"]`).Length() == 0 {
-		log.Fatalf("\nmethod1 fail %s, trying method2\n", link)
+		fmt.Printf("\nmethod1 fail %s, trying method2\n", link)
 		doc, err = config.RequestHeadless(link)
 		if err != nil {
 			return nil, err
 		}
 	}
 
+	// finder
 	s := doc.Find(`meta[name="description"]`)       // likes, comments, date
 	sTitle := doc.Find(`meta[property="og:title"]`) // caption, username, account name
 	titlesm, _ := sTitle.Attr("content")
 	content, _ := s.Attr("content")
 
+	//parser
 	reLikes := regexp.MustCompile(`^([\d,]+) likes`)
 	likes := reLikes.FindStringSubmatch(content)
 
