@@ -70,6 +70,8 @@ $RECYCLE.BIN/
 *.html
 *.log
 *.json
+output.xlsx
+input.xlsx
 
 tmp/
 

@@ -18,7 +18,6 @@ import (
 // const
 const (
 	TemplateFile = "template.xlsx"
-	OutputFile   = "output.xlsx"
 	MaxRetries   = 3
 	WorkerCount  = 20
 )
@@ -94,6 +93,7 @@ type ScraperManager struct {
 
 func main() {
 	inputFile := flag.String("input", "input.xlsx", "Path to the input Excel file")
+	outputFile := flag.String("output", "output.xlsx", "Path to the output Excel file")
 	flag.Parse()
 
 	buckets, total := analyzeInput(*inputFile)
@@ -101,7 +101,7 @@ func main() {
 		results: make([]models.SocialData, total),
 	}
 	manager.runParallelScrape(buckets)
-	manager.exportToExcel()
+	manager.exportToExcel(*outputFile)
 }
 
 // analyze
@@ -210,7 +210,7 @@ func scrapeWithRetry(link string, scrapeFn func(string) (models.SocialData, erro
 }
 
 // excel
-func (m *ScraperManager) exportToExcel() {
+func (m *ScraperManager) exportToExcel(outputFile string) {
 	var finalResults []models.SocialData
 	for _, res := range m.results {
 		if res.URL != "" {
@@ -222,8 +222,8 @@ func (m *ScraperManager) exportToExcel() {
 		fmt.Println("No results to export.")
 		return
 	}
-	fmt.Printf("%d results -> %s...\n", len(finalResults), OutputFile)
-	if err := excel.WriteResults(TemplateFile, OutputFile, finalResults); err != nil {
+	fmt.Printf("%d results -> %s...\n", len(finalResults), outputFile)
+	if err := excel.WriteResults(TemplateFile, outputFile, finalResults); err != nil {
 		log.Fatalf("Error writing results to excel: %v", err)
 	}
 }
