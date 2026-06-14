@@ -23,9 +23,9 @@ go mod tidy
 ```bash
 go run main.go
 ```
-   Or specify a custom input file:
+   Or specify a custom input and output file:
    ```bash
-   go run main.go -input input.xlsx
+   go run main.go -input input.xlsx -output output.xlsx
    ```
 5. Or to **compile** it to an executable:
    - For Linux: 
@@ -38,7 +38,7 @@ go run main.go
    ```
    - Run the executable:
    ```bash
-   ./xtwit-link-scrp -input my_links.xlsx
+   ./xtwit-link-scrp -input my_links.xlsx -output output.xlsx
    ```
 
 ## ADD-ON (for threads & tiktok)
