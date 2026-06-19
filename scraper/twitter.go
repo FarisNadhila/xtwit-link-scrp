@@ -60,7 +60,7 @@ func ScrapeTwitter(link string) (*models.SocialData, error) {
 
 	if err != nil || !hasData(doc) {
 		fmt.Printf("\nmethod1 fail %s, trying method2\n", link)
-		doc, err = config.RequestHeadless(link)
+		doc, err = config.RequestHeadless(link, 5)
 		if err != nil {
 			return nil, err
 		}

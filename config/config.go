@@ -69,12 +69,17 @@ func RequestStatic(link string) (*goquery.Document, error) {
 	return doc, nil
 }
 
-func RequestHeadless(link string) (*goquery.Document, error) {
+func RequestHeadless(link string, timeout uint8) (*goquery.Document, error) {
+	ua := userAgents[rand.Intn(len(userAgents))]
+	return RequestHeadlessWithUA(link, timeout, ua)
+}
+
+func RequestHeadlessWithUA(link string, timeout uint8, ua string) (*goquery.Document, error) {
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.Flag("headless", true),
 		chromedp.Flag("disable-gpu", true),
 		chromedp.Flag("no-sandbox", true),
-		chromedp.UserAgent(userAgents[rand.Intn(len(userAgents))]),
+		chromedp.UserAgent(ua),
 	)
 
 	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
@@ -86,10 +91,12 @@ func RequestHeadless(link string) (*goquery.Document, error) {
 	ctx, cancel = context.WithTimeout(ctx, 45*time.Second)
 	defer cancel()
 
+	duration := time.Duration(timeout)
+
 	var htmlContent string
 	err := chromedp.Run(ctx,
 		chromedp.Navigate(link),
-		chromedp.Sleep(5*time.Second),
+		chromedp.Sleep(duration*time.Second),
 		chromedp.OuterHTML("html", &htmlContent),
 	)
 	if err != nil {
@@ -111,5 +118,5 @@ func RequestLink(link string) (*goquery.Document, error) {
 	}
 
 	fmt.Printf("\nmethod1 fail %s, trying method2\n", link)
-	return RequestHeadless(link)
+	return RequestHeadless(link, 10)
 }

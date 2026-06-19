@@ -74,6 +74,17 @@ var platforms = []platform{
 			return *data, nil
 		},
 	},
+	{
+		Label:   "Facebook",
+		Matches: func(l string) bool { return strings.Contains(l, "facebook.com") },
+		Scrape: func(url string) (models.SocialData, error) {
+			data, err := scraper.ScrapeFacebook(url)
+			if err != nil {
+				return models.SocialData{}, err
+			}
+			return *data, nil
+		},
+	},
 }
 
 type ScrapeTask struct {
